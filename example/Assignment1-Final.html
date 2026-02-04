@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Equally-spaced Obstacles - Comparison</title>
+<style type="text/css">
+body {
+    font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue",
+     Helvetica, Arial, "Lucida Grande", sans-serif;
+    padding: 15px;
+    margin: auto;
+    max-width: 1400px;
+}
+
+h1 {
+    text-align: center;
+    color: #333;
+}
+
+.container {
+    display: flex;
+    gap: 30px;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin: 0 auto;
+    flex-wrap: wrap;
+}
+
+.simulation-panel {
+    flex: 1;
+    border: 2px solid #ccc;
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 380px;
+}
+
+.simulation-panel h3 {
+    margin-top: 0;
+    text-align: center;
+    color: #333;
+}
+
+.simulation-panel canvas {
+    display: block;
+    margin: 15px auto;
+    border: 1px solid #999;
+    background-color: #eaecef;
+}
+
+.controls {
+    margin: 10px 0;
+    text-align: center;
+    width: 100%;
+}
+
+.controls label {
+    margin-right: 8px;
+    font-weight: 500;
+}
+
+.controls input {
+    width: 50px;
+    padding: 4px;
+    margin-right: 10px;
+}
+
+.controls button {
+    margin: 5px;
+    padding: 8px 15px;
+    cursor: pointer;
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.controls button:hover {
+    background-color: #e0e0e0;
+}
+
+.canvas-container {
+    background-color: #eaecef;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    border-radius: 4px;
+}
+
+table {
+    width: 100%;
+    font-size: 12px;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+td {
+    padding: 6px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+td:first-child {
+    font-weight: 500;
+    width: 70%;
+}
+
+td:last-child {
+    text-align: right;
+    color: #0066cc;
+    font-weight: 500;
+}
+</style>
+
+<script src="/Users/marcellogalisai/artistoo/artistoo_minimal/build/artistoo.js"></script>
+<script>
+"use strict"
+
+let sims = [];
+let running = [true, true, true];
+let obstaclesPerRow = [0, 4, 8];
+let configs = [];
+
+function getBaseConfig(seedValue) {
+    return {
+        ndim: 2,
+        field_size: [200, 200],
+        conf: {
+            torus: [true, true],
+            seed: seedValue,
+            T: 20,
+            J: [[0, 20, 0], 
+                [20, 0, 20], 
+                [0, 20, 0]],
+            LAMBDA_V: [0, 50, 50],
+            V: [0, 200, 480],
+            LAMBDA_P: [0, 2, 50],
+            P: [0, 180, 24],
+            LAMBDA_ACT: [0, 200, 0],
+            MAX_ACT: [0, 80, 0],
+            ACT_MEAN: "geometric"
+        },
+        simsettings: {
+            NRCELLS: [10, 0],
+            BURNIN: 500,
+            RUNTIME: 1000,
+            RUNTIME_BROWSER: "Inf",
+            CANVASCOLOR: "eaecef",
+            CELLCOLOR: ["000000", "0000FF"],
+            ACTCOLOR: [true, true],
+            SHOWBORDERS: [true, true],
+            BORDERCOL: ["111111", "111111"],
+            zoom: 2,
+            SAVEIMG: false,
+            STATSOUT: { browser: false, node: false }
+        }
+    };
+}
+
+function initializeGrid_0() {
+    if (!this.helpClasses["gm"]) { this.addGridManipulator(); }
+    let size = this.C.extents[0];
+    let num = obstaclesPerRow[0];
+    let step = Math.floor(size / num);
+    let offset = Math.floor(step / 2);
+    for (let x = 0; x < num; x++) {
+        for (let y = 0; y < num; y++) {
+            let xPos = offset + (x * step);
+            let yPos = offset + (y * step);
+            this.gm.seedCellAt(2, [xPos, yPos]);
+        }
+    }
+    for (let x = 0; x < 180; x++) {
+        this.gm.seedCell(1);
+    }
+}
+
+function initializeGrid_1() {
+    if (!this.helpClasses["gm"]) { this.addGridManipulator(); }
+    let size = this.C.extents[0];
+    let num = obstaclesPerRow[1];
+    let step = Math.floor(size / num);
+    let offset = Math.floor(step / 2);
+    for (let x = 0; x < num; x++) {
+        for (let y = 0; y < num; y++) {
+            let xPos = offset + (x * step);
+            let yPos = offset + (y * step);
+            this.gm.seedCellAt(2, [xPos, yPos]);
+        }
+    }
+    for (let x = 0; x < 180; x++) {
+        this.gm.seedCell(1);
+    }
+}
+
+function initializeGrid_2() {
+    if (!this.helpClasses["gm"]) { this.addGridManipulator(); }
+    let size = this.C.extents[0];
+    let num = obstaclesPerRow[2];
+    let step = Math.floor(size / num);
+    let offset = Math.floor(step / 2);
+    for (let x = 0; x < num; x++) {
+        for (let y = 0; y < num; y++) {
+            let xPos = offset + (x * step);
+            let yPos = offset + (y * step);
+            this.gm.seedCellAt(2, [xPos, yPos]);
+        }
+    }
+    for (let x = 0; x < 180; x++) {
+        this.gm.seedCell(1);
+    }
+}
+
+function killSimulation(index) {
+    running[index] = false;
+    
+    const container = document.getElementById("simulation-box-" + index);
+    if (container) {
+        container.innerHTML = "";
+    }
+
+    if (sims[index]) {
+        sims[index] = null;
+    }
+}
+
+function initializeSim(index) {
+    killSimulation(index);
+
+    let config = getBaseConfig(index + 1);
+    configs[index] = config;
+    
+    let initFuncs = [initializeGrid_0, initializeGrid_1, initializeGrid_2];
+    
+    sims[index] = new CPM.Simulation(config, { 
+        initializeGrid: initFuncs[index]
+    });
+    
+    if (sims[index].Cim && sims[index].Cim.canvas) {
+        document.getElementById("simulation-box-" + index).appendChild(sims[index].Cim.canvas);
+    }
+    
+    running[index] = true;
+    step(index);
+}
+
+function step(index) {
+    if (!running[index] || !sims[index]) return;
+
+    sims[index].step();
+    
+    if (sims[index].Cim) {
+        sims[index].drawCanvas();
+    }
+    
+    requestAnimationFrame(() => step(index));
+}
+
+function updateObstacles(index) {
+    let val = document.getElementById("obsInput-" + index).value;
+    obstaclesPerRow[index] = parseInt(val);
+    initializeSim(index);
+}
+
+function initialize() {
+    for (let i = 0; i < 3; i++) {
+        initializeSim(i);
+    }
+}
+</script>
+</head>
+<body onload="initialize()">
+
+<h1>Equally-spaced Obstacles - Comparison</h1>
+
+<div class="container">
+    <!-- Simulation 1 -->
+    <div class="simulation-panel">
+        <h3>Simulation 1</h3>
+        <div class="controls">
+            <label for="obsInput-0">Obstacles per row:</label>
+            <input type="number" id="obsInput-0" value="3" min="2" max="15">
+            <button onclick="updateObstacles(0)">Update Grid</button>
+        </div>
+        <div class="canvas-container" id="simulation-box-0"></div>
+        <table>
+            <tr>
+                <td>J<sub>cell-matrix</sub></td>
+                <td>20</td>
+            </tr>
+            <tr>
+                <td>J<sub>cell-cell</sub></td>
+                <td>20</td>
+            </tr>
+            <tr>
+                <td>J<sub>cell-obstacle</sub></td>
+                <td>20</td>
+            </tr>
+            <tr>
+                <td>Volume</td>
+                <td>500</td>
+            </tr>
+            <tr>
+                <td>λ<sub>Volume</sub></td>
+                <td>50</td>
+            </tr>
+            <tr>
+                <td>Perimeter</td>
+                <td>280</td>
+            </tr>
+            <tr>
+                <td>λ<sub>P</sub></td>
+                <td>2</td>
+            </tr>
+            <tr>
+                <td>Max<sub>Act</sub></td>
+                <td>20</td>
+            </tr>
+            <tr>
+                <td>λ<sub>Act</sub></td>
+                <td>240</td>
+            </tr>
+            <tr>
+                <td>T</td>
+                <td>20</td>
+            </tr>
+            <tr>
+                <td>Obstacles per row</td>
+                <td>3</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Simulation 2 -->
+    <div class="simulation-panel">
+        <h3>Simulation 2</h3>
+        <div class="controls">
+            <label for="obsInput-1">Obstacles per row:</label>
+            <input type="number" id="obsInput-1" value="4" min="2" max="15">
+            <button onclick="updateObstacles(1)">Update Grid</button>
+        </div>
+        <div class="canvas-container" id="simulation-box-1"></div>
+        <table>
+            <tr>
+                <td>J<sub>cell-matrix</sub></td>
+                <td>20</td>
+            </tr>
+            <tr>
+                <td>J<sub>cell-cell</sub></td>
+                <td>20</td>
+            </tr>
+            <tr>
+                <td>J<sub>cell-obstacle</sub></td>
+                <td>20</td>
+            </tr>
+            <tr>
+                <td>Volume</td>
+                <td>500</td>
+            </tr>
+            <tr>
+                <td>λ<sub>Volume</sub></td>
+                <td>50</td>
+            </tr>
+            <tr>
+                <td>Perimeter</td>
+                <td>280</td>
+            </tr>
+            <tr>
+                <td>λ<sub>P</sub></td>
+                <td>2</td>
+            </tr>
+            <tr>
+                <td>Max<sub>Act</sub></td>
+                <td>20</td>
+            </tr>
+            <tr>
+                <td>λ<sub>Act</sub></td>
+                <td>240</td>
+            </tr>
+            <tr>
+                <td>T</td>
+                <td>20</td>
+            </tr>
+            <tr>
+                <td>Obstacles per row</td>
+                <td>4</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Simulation 3 -->
+    <div class="simulation-panel">
+        <h3>Simulation 3</h3>
+        <div class="controls">
+            <label for="obsInput-2">Obstacles per row:</label>
+            <input type="number" id="obsInput-2" value="5" min="2" max="15">
+            <button onclick="updateObstacles(2)">Update Grid</button>
+        </div>
+        <div class="canvas-container" id="simulation-box-2"></div>
+        <table>
+            <tr>
+                <td>J<sub>cell-matrix</sub></td>
+                <td>20</td>
+            </tr>
+            <tr>
+                <td>J<sub>cell-cell</sub></td>
+                <td>20</td>
+            </tr>
+            <tr>
+                <td>J<sub>cell-obstacle</sub></td>
+                <td>20</td>
+            </tr>
+            <tr>
+                <td>Volume</td>
+                <td>500</td>
+            </tr>
+            <tr>
+                <td>λ<sub>Volume</sub></td>
+                <td>50</td>
+            </tr>
+            <tr>
+                <td>Perimeter</td>
+                <td>280</td>
+            </tr>
+            <tr>
+                <td>λ<sub>P</sub></td>
+                <td>2</td>
+            </tr>
+            <tr>
+                <td>Max<sub>Act</sub></td>
+                <td>20</td>
+            </tr>
+            <tr>
+                <td>λ<sub>Act</sub></td>
+                <td>240</td>
+            </tr>
+            <tr>
+                <td>T</td>
+                <td>20</td>
+            </tr>
+            <tr>
+                <td>Obstacles per row</td>
+                <td>5</td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+</body>
+</html>

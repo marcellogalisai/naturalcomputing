@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Collective Migration Comparison</title>
+<style type="text/css">
+body {
+    font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue",
+     Helvetica, Arial, "Lucida Grande", sans-serif;
+    padding: 15px;
+    margin: auto;
+    max-width: 1400px;
+}
+
+.container {
+    display: flex;
+    gap: 30px;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin: 0 auto;
+}
+
+.simulation-panel {
+    flex: 1;
+    border: 2px solid #ccc;
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 420px;
+}
+
+.simulation-panel canvas {
+    display: block;
+    margin: 15px auto;
+}
+
+.simulation-panel h3 {
+    margin-top: 0;
+    text-align: center;
+    color: #333;
+}
+
+.controls {
+    margin: 10px 0;
+    text-align: center;
+}
+
+.controls button {
+    margin: 5px;
+    padding: 8px 15px;
+    cursor: pointer;
+}
+
+table {
+    width: 100%;
+    font-size: 12px;
+    border-collapse: collapse;
+}
+
+td {
+    padding: 5px;
+    text-align: left;
+}
+
+td:first-child {
+    font-weight: bold;
+    width: 60%;
+}
+
+td:last-child {
+    text-align: right;
+    color: #0066cc;
+}
+
+.canvas-container {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: white;
+    border-radius: 5px;
+    display: flex;
+    justify-content: center;
+	align-items: center;
+
+}
+
+canvas {
+    margin: 32px !important;
+    display: inline-block !important;
+
+}
+</style>
+
+<script src="./artistoo.js"></script>
+<script src="./fpsmeter.min.js"></script>
+<script>
+"use strict"
+
+function getBaseConfig(seedValue) {
+    return {
+        ndim: 2,
+        field_size: [200, 200],
+        
+        conf: {
+            torus: [true, true],
+            seed: seedValue,
+            T: 20,
+            
+            J: [[0, 20, 0], // [0][1]: cell-matrix
+                [20, 0, 20], // [1][0]: cell-matrix, [1][1]: cell-cell, [1][2]: cell-obstacle
+                [0, 20, 0]], // [2][1]: cell-obstacle
+            
+            LAMBDA_V: [0, 50, 50],
+            V: [0, 200, 480],
+            
+            LAMBDA_P: [0, 2, 50],
+            P: [0, 180, 24],
+            
+            LAMBDA_ACT: [0, 200, 0],
+            MAX_ACT: [0, 20, 0],
+            ACT_MEAN: "geometric"
+        },
+        
+        simsettings: {
+            NRCELLS: [180, 5],
+            BURNIN: 0,
+            RUNTIME: 1000,
+            RUNTIME_BROWSER: "Inf",
+            
+            CANVASCOLOR: "eaecef",
+            CELLCOLOR: ["000000", "0000FF"],
+            ACTCOLOR: [true, true],
+            SHOWBORDERS: [true, true],
+            BORDERCOL: ["111111", "111111"],
+            zoom: 2,
+            
+            SAVEIMG: false,
+            IMGFRAMERATE: 1,
+            SAVEPATH: "output/img/ManyCellsPrefDir",
+            EXPNAME: "ManyCellsPrefDir",
+            
+            STATSOUT: { browser: false, node: false },
+            LOGRATE: 10
+        }
+    };
+}
+
+let configs = [
+    getBaseConfig(1),
+    getBaseConfig(6),
+    getBaseConfig(7)
+];
+configs[0].name = "Simulation 1";
+configs[0].conf.MAX_ACT[1] = 80;
+
+configs[1].name = "Simulation 2";
+// configs[1].conf.J[1][1] = 5;
+
+configs[2].name = "Simulation 3";
+// configs[2].conf.LAMBDA_ACT[1] = 200;
+// configs[2].conf.MAX_ACT[1] = 30;
+
+let sims = [];
+
+function populateTables() {
+    const panels = document.querySelectorAll('.simulation-panel');
+    
+    panels.forEach((panel, i) => {
+        const conf = configs[i].conf;
+        const table = panel.querySelector('table');
+        
+        // Clear existing hardcoded rows
+        table.innerHTML = "";
+
+        // Mapping config keys to display names
+        // Format: [Display Label, Value from Config]
+        const rows = [
+            ["J<sub>cell-matrix</sub>", conf.J[0][1]],
+            ["J<sub>cell-cell</sub>", conf.J[1][1]],
+            ["J<sub>cell-obstacle</sub>", conf.J[1][2]],
+            ["Volume", conf.V[1]],
+            ["λ<sub>Volume</sub>", conf.LAMBDA_V[1]],
+            ["Perimeter", conf.P[1]],
+            ["λ<sub>P</sub>", conf.LAMBDA_P[1]],
+            ["Max<sub>Act</sub>", conf.MAX_ACT[1]],
+            ["λ<sub>Act</sub>", conf.LAMBDA_ACT[1]],
+            ["T", conf.T]
+        ];
+
+        rows.forEach(rowData => {
+            let row = table.insertRow();
+            let cell1 = row.insertCell(0);
+            let cell2 = row.insertCell(1);
+            cell1.innerHTML = rowData[0];
+            cell2.innerText = rowData[1];
+        });
+    });
+}
+
+function initialize() {
+    const panels = document.querySelectorAll('.simulation-panel');
+    
+    for (let i = 0; i < 3; i++) {
+        let canvasContainer = document.createElement('div');
+        canvasContainer.className = 'canvas-container';
+        canvasContainer.id = 'sim-canvas-' + i;
+        panels[i].appendChild(canvasContainer);
+        
+        sims[i] = new CPM.Simulation(configs[i], {});
+        
+        const canvases = document.querySelectorAll('canvas');
+        if (canvases[i]) {
+            canvasContainer.appendChild(canvases[i]);
+        }
+    }
+    
+    populateTables(); // Call the dynamic table filler
+    step();
+}
+
+function step() {
+    for (let i = 0; i < 3; i++) {
+        sims[i].step();
+    }
+    
+    if (sims[0].conf["RUNTIME_BROWSER"] == "Inf" || sims[0].time + 1 < sims[0].conf["RUNTIME_BROWSER"]) {
+        requestAnimationFrame(step);
+    }
+}
+
+function seedCell(index, k) {
+    sims[index].gm.seedCell(k);
+}
+
+function seedCells(index, ncells) {
+    for (let i = 0; i < ncells; i++) {
+        seedCell(index, 1);
+    }
+}
+</script>
+</head>
+<body onload="initialize()">
+
+<h1 style="text-align: center;">Collective Migration with Obstacles - Comparison</h1>
+
+<div class="container">
+    <div class="simulation-panel">
+    <h3>Simulation 1</h3>
+    <p>Cells moving at higher densities</p>
+    <div class="controls">
+        <button onclick="seedCells(0, 1)">+1 cell</button>
+        <button onclick="seedCells(0, 10)">+10 cells</button>
+    </div>
+    <table></table>
+</div>
+
+<div class="simulation-panel">
+    <h3>Simulation 2</h3>
+    <p>Cells not moving at higher densities</p>
+    <div class="controls">
+        <button onclick="seedCells(1, 1)">+1 cell</button>
+        <button onclick="seedCells(1, 10)">+10 cells</button>
+    </div>
+    <table></table>
+</div>
+
+<div class="simulation-panel">
+    <h3>Simulation 3</h3>
+    <p><i>Insert description here</i></p>
+    <div class="controls">
+        <button onclick="seedCells(2, 1)">+1 cell</button>
+        <button onclick="seedCells(2, 10)">+10 cells</button>
+    </div>
+    <table></table>
+</div>
+</div>
+
+</body>
+</html>

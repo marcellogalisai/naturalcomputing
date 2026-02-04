@@ -1,0 +1,95 @@
+<!-- Page setup and title -->
+<!DOCTYPE html>
+<html lang="en">
+<head><meta http-equiv="Content-Type" content="text/html;
+charset=UTF-8">
+<title>PageTitle</title>
+<style type="text/css"> 
+body{
+    font-family: "HelveticaNeue-Light", sans-serif; padding : 15px;
+}
+</style>
+
+<!-- Sourcing the cpm build -->
+<script src="./artistoo.js"></script>
+<script src="./fpsmeter.min.js"></script>
+
+<script>
+"use strict"
+let config = {
+    ndim: 2,
+    field_size: [200, 200],
+        
+    conf: {
+        torus: [true, true],
+        seed: 10,
+        T: 20,
+            
+        J: [[0, 20, 0], // [0][1]: cell-matrix
+            [20, 0, 20], // [1][0]: cell-matrix, [1][1]: cell-cell, [1][2]: cell-obstacle
+            [0, 20, 0]], // [2][1]: cell-obstacle
+            
+        LAMBDA_V: [0, 50, 50],
+        V: [0, 60, 300],
+            
+        LAMBDA_P: [0, 2, 50],
+        P: [0, 60, 65],
+            
+        LAMBDA_ACT: [0, 200, 0],
+        MAX_ACT: [0, 80, 0],
+        ACT_MEAN: "geometric"
+    },
+        
+    simsettings: {
+        NRCELLS: [40, 9],
+        BURNIN: 500,
+        RUNTIME: 1000,
+        RUNTIME_BROWSER: "Inf",
+            
+        CANVASCOLOR: "eaecef",
+        CELLCOLOR: ["000000", "0000FF"],
+        ACTCOLOR: [true, true],
+        SHOWBORDERS: [true, true],
+        BORDERCOL: ["111111", "111111"],
+        zoom: 2,
+            
+        SAVEIMG: false,
+        IMGFRAMERATE: 1,
+        SAVEPATH: "output/img/ManyCellsPrefDir",
+        EXPNAME: "ManyCellsPrefDir",
+            
+        STATSOUT: { browser: false, node: false },
+        LOGRATE: 10
+    }
+};
+
+let sim, meter
+
+
+function initialize(){
+	sim = new CPM.Simulation( config, {} )
+
+
+	meter = new FPSMeter({left:"auto", right:"5px"})
+	step()
+}
+
+
+function step(){
+	sim.step()
+	meter.tick()
+	if( sim.conf["RUNTIME_BROWSER"] == "Inf" | sim.time+1 < sim.conf["RUNTIME_BROWSER"] ){
+		requestAnimationFrame( step )
+	}
+}
+
+
+</script>
+</head>
+<body onload="initialize()">
+<h1>Equally-spaced Obstacles</h1>
+<p>
+Description of your page.
+</p>
+</body>
+</html>

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Equally-spaced Obstacles</title>
+<style type="text/css"> 
+    body {
+        font-family: "HelveticaNeue-Light", sans-serif; 
+        padding : 15px;
+    }
+    .controls {
+        background: #f4f4f4;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+        display: inline-block;
+    }
+    canvas {
+        border: 2px solid #333;
+        display: block;
+        margin-top: 10px;
+        background-color: #eaecef;
+    }
+</style>
+
+<script src="/Users/marcellogalisai/artistoo/artistoo_minimal/build/artistoo.js"></script>
+<script>
+"use strict"
+
+let sim;                 
+let obstaclesPerRow = 0; 
+let running = false; 
+
+let config = {
+    ndim: 2,
+    field_size: [200, 200],
+    conf: {
+        torus: [true, true],
+        seed: 10,
+        T: 20,
+		J: [[0, 20, 0], 
+            [20, 0, 20], 
+            [0, 20, 0]],
+            
+        LAMBDA_V: [0, 50, 50],
+        V: [0, 200, 480],
+            
+        LAMBDA_P: [0, 2, 50],
+        P: [0, 180, 24],
+            
+        LAMBDA_ACT: [0, 140, 0],
+        MAX_ACT: [0, 80, 0],
+        ACT_MEAN: "geometric"
+    },
+    simsettings: {
+        NRCELLS: [180, 0],
+        BURNIN: 0,
+        RUNTIME: 1000,
+        RUNTIME_BROWSER: "Inf",
+        CANVASCOLOR: "eaecef",
+        CELLCOLOR: ["000000", "0000FF"],
+        ACTCOLOR: [true, true],
+        SHOWBORDERS: [true, true],
+        BORDERCOL: ["111111", "111111"],
+        zoom: 2,
+        SAVEIMG: false,
+        STATSOUT: { browser: false, node: false }
+    }
+};
+
+function killSimulation() {
+    running = false;
+    
+    const container = document.getElementById("simulation-box");
+    if (container) {
+        container.innerHTML = "";
+    }
+
+    const strayCanvases = document.querySelectorAll("canvas");
+    strayCanvases.forEach(c => c.remove());
+
+    sim = null;
+}
+
+function initialize() {
+    killSimulation();
+
+    sim = new CPM.Simulation(config, { initializeGrid : initializeGrid });
+    
+    if (sim.Cim && sim.Cim.canvas) {
+        document.getElementById("simulation-box").appendChild(sim.Cim.canvas);
+    }
+    
+    running = true;
+    step();
+}
+
+function step() {
+    if (!running || !sim) return;
+
+    sim.step();
+    
+    if(sim.Cim) sim.drawCanvas();
+    
+    requestAnimationFrame(step);
+}
+
+function updateObstacles() {
+    let val = document.getElementById("obsInput").value;
+    obstaclesPerRow = parseInt(val);
+    initialize();
+}
+
+function initializeGrid() {
+    if (!this.helpClasses["gm"]) { this.addGridManipulator(); }
+
+    let size = this.C.extents[0];
+    let num = obstaclesPerRow;
+    
+    let step = Math.floor(size / num);
+    let offset = Math.floor(step / 2);
+
+    for (let x = 0; x < num; x++) {
+        for (let y = 0; y < num; y++) {
+            let xPos = offset + (x * step);
+            let yPos = offset + (y * step);
+            this.gm.seedCellAt(2, [xPos, yPos]);
+        }
+    }
+
+    for (let x = 0; x < config.simsettings.NRCELLS[0]; x++) {
+        this.gm.seedCell(1);
+    }
+}
+</script>
+</head>
+<body onload="initialize()">
+
+<h1>Equally-spaced Obstacles</h1>
+
+<div class="controls">
+    <label>Obstacles per row:</label>
+    <input type="number" id="obsInput" value="3" min="2" max="15" style="width: 50px;">
+    <button onclick="updateObstacles()">Update Grid</button>
+</div>
+
+<div id="simulation-box"></div>
+
+</body>
+</html>
